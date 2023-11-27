@@ -1,0 +1,11 @@
+# Ignore Python byte compilation cache
+__pycache__
+
+# Ignore Django migration files
+*/migrations/
+/myenv
+celery.log
+celerybeat-schedule.bak
+celerybeat-schedule.dat
+celerybeat-schedule.dir
+db.sqlite3
