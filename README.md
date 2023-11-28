@@ -24,3 +24,12 @@ celery -A xtract.celery worker --concurrency=5  -l info
 celery -A xtract beat -l INFO
 
 celery -A xtract.celery worker --pool=solo  -l info 
+
+
+
+
+
+
+#channels in django using websokets
+
+referd in https://www.geeksforgeeks.org/realtime-chat-app-using-django/
