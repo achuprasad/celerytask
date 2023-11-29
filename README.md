@@ -33,3 +33,5 @@ celery -A xtract.celery worker --pool=solo  -l info
 #channels in django using websokets
 
 referd in https://www.geeksforgeeks.org/realtime-chat-app-using-django/
+
+https://www.tutorialspoint.com/realtime-chat-app-using-django ------- FOR CUSTOM if you want to check
