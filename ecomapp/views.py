@@ -1,10 +1,11 @@
+from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 from rest_framework.views import APIView
 from ecomapp.mixins import EmailSendingMixin
-from ecomapp.models import Category, Customer, Item
+from ecomapp.models import Category, Customer, Message
 from django.contrib.auth import authenticate,login,logout
 from rest_framework.authtoken.models import Token
 from ecomapp.serializers import CategorySerializer, CustomerSerializer, LoginSerializer, OTPResetSerializer, OTPverifySerializer, PasswordSetSerializer, RegisterSerializer
@@ -173,21 +174,96 @@ class OTPVerificationView(APIView):
 
 
 
-
+'''FROM HERE CHAT APPLICATIONS '''
 
 
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.db.models import Q
 
 
 
-def chatPage(request, *args, **kwargs):
+class LoginTemView(View):
+
+    def get(self,request):
+        context = {}
+        return render(request, "login.html", context)
     
-	context = {}
-	return render(request, "chat/chatPage.html", context)
+    def post(self,request):
+        print(request.POST.dict())
+        context = {} 
+        if request.POST.get('email') and request.POST.get('password'):
+            try:
+                user = authenticate(username=request.POST.get('email'), password=request.POST.get('password'))
+                if user is not None:
+                    login(request, user)
+                    return redirect('/home/')
+                else:
+                    return redirect('/')
+            except Exception as e:
+                print()
+                return redirect('/')
+        else:
+            return render(request, "login.html", context)
 
 
+@method_decorator(login_required, name='dispatch')     
+class HomeView(View):
+
+    def get(self, request):
+        context = {}
+        return render(request, "home.html", context)
 
 
+def logout_view(request):
+    logout(request)
+    return redirect('/')
+
+
+@login_required(login_url='/') 
+def chat_list(request):
+    receiver_users = Customer.objects.exclude(email=request.user.email)  # Fetch receiver users
+    context = {'receiver_users': receiver_users}
+    return render(request, 'chat/chat_list.html', context)
+
+@login_required(login_url='/login/') 
+def create_chat(request, user_id):
+    try:
+        other_user = Customer.objects.get(pk=user_id)
+        # Check if a chat between these users already exists
+        existing_chat = Message.objects.filter(
+            (Q(sender=request.user) & Q(receiver=other_user)) |
+            (Q(sender=other_user) & Q(receiver=request.user))
+        )
+        if existing_chat.exists():
+           
+            return redirect('chat_interface', user_id=other_user.id)
+        else:
+            # If no chat exists, create a chat between the users
+            # This is just a sample message to start the conversation
+            Message.objects.create(
+                sender=request.user,
+                receiver=other_user,
+                content="Hello! Let's start chatting!"
+            )
+            return redirect('chat_interface', user_id=other_user.id)
+    except Customer.DoesNotExist:
+        return HttpResponse("User not found", status=404)
+
+@login_required(login_url='/login/') 
+def chat_interface(request, user_id):
+    try:
+        other_user = Customer.objects.get(pk=user_id)
+        messages = Message.objects.filter(
+            (Q(sender=request.user) & Q(receiver=other_user)) |
+            (Q(sender=other_user) & Q(receiver=request.user))
+        ).order_by('timestamp')
+    except Customer.DoesNotExist:
+        return HttpResponse("User not found", status=404)
+    
+    context = {'other_user': other_user, 'messages': messages}
+    return render(request, "chat/chat_interface.html", context)
 
 
 

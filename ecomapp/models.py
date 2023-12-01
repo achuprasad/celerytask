@@ -39,6 +39,7 @@ class CustomUserManager(BaseUserManager):
 class Customer(AbstractUser):
     username = None
     email = models.EmailField(_("email address"), unique=True)
+    username = models.CharField(max_length=100,unique=True,blank=True,null=True)
     phone = models.CharField(max_length=250,blank=True,null=True)
     secret_key = models.CharField(max_length=16, blank=True, null=True)
     created_at = models.DateTimeField(_('created_date'), auto_now_add=True, editable=False, blank=True, null=True) 
@@ -51,6 +52,26 @@ class Customer(AbstractUser):
     def __str__(self):
         return self.email
     
+
+
+class Message(models.Model):
+    sender = models.ForeignKey('Customer', related_name='sent_messages', on_delete=models.CASCADE)
+    receiver = models.ForeignKey('Customer', related_name='received_messages', on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    room_unique = models.CharField(max_length=300,null=True,blank=True)
+
+    def __str__(self):
+        return f"{self.sender.email} -> {self.receiver.email}: {self.content} ---{self.room_unique}"
+
+
+class MessageHistory(models.Model):
+    message = models.ForeignKey('Message', related_name='message_sub', on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.content}"
 
 
 class Category(models.Model):

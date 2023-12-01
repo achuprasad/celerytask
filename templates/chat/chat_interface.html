@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+    <center><h1>Hello, Welcome to my chat site!</h1></center>
+    <br>
+    <nav><a href="{% url 'logout' %}">logout</a></nav>
+    <div id="chat-container">
+        <h1>Chatting with {{ other_user }}</h1>
+        <div id="message-container">
+          {% for message in messages %}
+            <p>{{ message.sender }}: {{ message.content }}</p>
+          {% endfor %}
+        </div>
+        <input type="text" id="id_message_send_input" />
+        <button id="id_message_send_button">Send</button>
+    </div>
+      
+    <script>
+        const senderUsername = "{{ request.user.email }}"; // Use the email or appropriate identifier
+        console.log('senderUsername-----', senderUsername); // Log sender's username
+
+        function updateWebSocketURL(receiverUsername) {
+            const chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${senderUsername}/${receiverUsername}`);
+        
+            chatSocket.onopen = function (e) {
+                console.log("The connection was set up successfully!");
+            };
+            chatSocket.onclose = function (e) {
+                console.log("Something unexpected happened!");
+            };
+            document.querySelector("#id_message_send_input").focus();
+            document.querySelector("#id_message_send_input").onkeyup = function (e) {
+                if (e.keyCode == 13) {
+                    document.querySelector("#id_message_send_button").click();
+                }
+            };
+            document.querySelector("#id_message_send_button").onclick = function (e) {
+                var messageInput = document.querySelector("#id_message_send_input").value;
+                chatSocket.send(JSON.stringify({ message: messageInput, username: senderUsername }));
+            };
+            chatSocket.onmessage = function (e) {
+                const data = JSON.parse(e.data);
+                var div = document.createElement("div");
+                div.className = "message";
+                div.innerHTML = '<span class="username">' + data.username + ':</span> ' + data.message;
+                document.querySelector("#message-container").appendChild(div);
+            };
+        }
+
+        // Logic to get the receiver's username
+        const receiverUsername = "{{ receiver_username }}"; // Use appropriate logic to retrieve receiver's username
+        console.log('receiverUsername -----', receiverUsername); // Log receiver's username
+        updateWebSocketURL(receiverUsername);
+    </script>
+</body>
+</html>
