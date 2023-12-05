@@ -17,10 +17,10 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     first_name =  serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
-    username = serializers.CharField(required=True)
+   
     class Meta:
         model = Customer
-        fields = ('first_name','last_name','email', 'password','username')
+        fields = ('first_name','last_name','email', 'password')
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data.get('password'))
         return super(RegisterSerializer, self).create(validated_data)

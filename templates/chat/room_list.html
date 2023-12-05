@@ -1,16 +1,165 @@
-<!DOCTYPE html>
+<!-- refer for current like given code -->
+<!-- <!DOCTYPE html>
 <html>
 <head>
-    <title>Room List</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Chat</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Your CSS styles */
+        .chat-box {
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            position: absolute;
+        }
+        .chat-header {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .input-group {
+            overflow: visible;
+            bottom: -247px;
+        }
+        .close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Room List</h1>
-    <ul>
-        {% for room in rooms %}
-            <li>
-                <a href="{% url 'join_room' room.name %}">{{ room.name }}</a>
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-4">
+                <h1>List of Receivers</h1>
+                <ul class="list-group" id="receiver-list">
+                    
+                    {% for receiver in receiver_users %}
+                        <li>
+                            <a href="#" onclick="startChat('{{ receiver.email }}')">Chat with {{ receiver.email }}</a>
+                            <div class="chat-box" id="chat-box-{{ receiver.email }}">
+                                <span class="close-button" onclick="closeChat('{{ receiver.email }}')">X</span>
+                                <div class="chat-header">Chat Interface with {{ receiver.email }}</div>
+                                <div class="chat-body message-container" id="message-container-{{ receiver.email }}"></div>
+                                <div class="chat-footer">
+                                    <div class="input-group">
+                                        <input type="text" id="id_message_send_input_{{ receiver.email }}" class="form-control" placeholder="Type a message...">
+                                        <button id="id_message_send_button_{{ receiver.email }}" class="btn btn-primary">Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        let chatBoxCount = 0;
+        let chatSockets = {};
+
+        function startChat(receiver) {
+            const receiverUsername = receiver;
+            const chatBox = document.getElementById(`chat-box-${receiver}`);
+
+            if (chatBox.style.display === 'block') {
+                return;
+            }
+            
+
+            chatBox.style.display = 'block';
+            chatBox.style.right = `${chatBoxCount * 320}px`;
+            chatBox.style.bottom = `${chatBoxCount * 2}px`;
+            chatBox.style.borderRadius = '9px';
+            chatBox.style.minHeight = '333px';
+            chatBoxCount++;
+
+            if (!chatSockets[receiverUsername]) {
+                const senderUsername = "{{ request.user.email }}";
+                const chatRoomName = `group_chat_${senderUsername}_${receiverUsername}`;
+
+                chatSockets[receiverUsername] = new WebSocket(`ws://${window.location.host}/ws/chat/${senderUsername}/${receiverUsername}/`);
+                chatSockets[receiverUsername].roomName = chatRoomName;
+
+                chatSockets[receiverUsername].onopen = function (e) {
+                    console.log("The connection was set up successfully!");
+                };
+
+                chatSockets[receiverUsername].onmessage = function (e) {
+                    const data = JSON.parse(e.data);
+                    const messageContainer = document.getElementById(`message-container-${receiverUsername}`);
+
+                    if (messageContainer) {
+                        const messageElement = document.createElement("div");
+                        messageElement.classList.add("message-container");
+
+                        const senderUsername = data.sender_username;
+                        const receiverEmail = data.receiver_email; // Assuming the email is in data
+                        const message = data.message;
+
+                        if (receiverEmail === receiverUsername) {
+                            messageElement.classList.add("receiver-message");
+                        } else {
+                            messageElement.classList.add("sender-message");
+                        }
+
+                        // Creating the message box HTML
+                        messageElement.innerHTML = `
+                            <div class="message-box">
+                                <span class="username">${senderUsername}:</span><br>
+                                <span>${message}</span>
+                            </div>`;
+
+                        messageContainer.appendChild(messageElement);
+                    } else {
+                        console.error(`Message container not found for ${receiverUsername}`);
+                    }
+                };
+
+                chatSockets[receiverUsername].onclose = function (e) {
+                    console.log("The connection was closed unexpectedly!");
+                };
+
+                chatSockets[receiverUsername].onerror = function (error) {
+                    console.error('WebSocket Error: ', error);
+                };
+
+                const messageInput = document.getElementById(`id_message_send_input_${receiver}`);
+                const sendButton = document.getElementById(`id_message_send_button_${receiver}`);
+
+                sendButton.addEventListener('click', function() {
+                    const messageToSend = messageInput.value;
+                    chatSockets[receiverUsername].send(JSON.stringify({ message: messageToSend, username: senderUsername }));
+                    messageInput.value = '';
+                });
+            }
+        }
+
+        function closeChat(receiver) {
+            const chatBox = document.getElementById(`chat-box-${receiver}`);
+
+            const chatSocket = chatSockets[receiver];
+            console.log('chatSocket----------',chatSocket);
+            if (chatSocket) {
+                chatSocket.close(); 
+                delete chatSockets[receiver]; 
+            }
+
+            chatBox.style.display = 'none';
+            chatBoxCount--;
+            console.log('chatBoxCount------',chatBoxCount);
+        }
+    </script>
 </body>
-</html>
+</html> -->

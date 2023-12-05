@@ -4,6 +4,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 from rest_framework.views import APIView
+from ecomapp.forms import CustomUserCreationForm
 from ecomapp.mixins import EmailSendingMixin
 from ecomapp.models import Category, Customer, Message
 from django.contrib.auth import authenticate,login,logout
@@ -181,6 +182,14 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Q
+from django.views.generic.edit import FormView
+from django.urls import reverse_lazy
+from django.views.generic.edit import CreateView
+class UserRegisterView(CreateView):
+    form_class = CustomUserCreationForm
+    template_name = 'register.html'
+    success_url = reverse_lazy('log_template')
+    
 
 
 
@@ -227,43 +236,6 @@ def chat_list(request):
     context = {'receiver_users': receiver_users}
     return render(request, 'chat/chat_list.html', context)
 
-@login_required(login_url='/login/') 
-def create_chat(request, user_id):
-    try:
-        other_user = Customer.objects.get(pk=user_id)
-        # Check if a chat between these users already exists
-        existing_chat = Message.objects.filter(
-            (Q(sender=request.user) & Q(receiver=other_user)) |
-            (Q(sender=other_user) & Q(receiver=request.user))
-        )
-        if existing_chat.exists():
-           
-            return redirect('chat_interface', user_id=other_user.id)
-        else:
-            # If no chat exists, create a chat between the users
-            # This is just a sample message to start the conversation
-            Message.objects.create(
-                sender=request.user,
-                receiver=other_user,
-                content="Hello! Let's start chatting!"
-            )
-            return redirect('chat_interface', user_id=other_user.id)
-    except Customer.DoesNotExist:
-        return HttpResponse("User not found", status=404)
-
-@login_required(login_url='/login/') 
-def chat_interface(request, user_id):
-    try:
-        other_user = Customer.objects.get(pk=user_id)
-        messages = Message.objects.filter(
-            (Q(sender=request.user) & Q(receiver=other_user)) |
-            (Q(sender=other_user) & Q(receiver=request.user))
-        ).order_by('timestamp')
-    except Customer.DoesNotExist:
-        return HttpResponse("User not found", status=404)
-    
-    context = {'other_user': other_user, 'messages': messages}
-    return render(request, "chat/chat_interface.html", context)
 
 
 
