@@ -4,9 +4,10 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 from rest_framework.views import APIView
+from ecomapp.decorators import logout_after_10_minutes
 from ecomapp.forms import CustomUserCreationForm
 from ecomapp.mixins import EmailSendingMixin
-from ecomapp.models import Category, Customer, Message
+from ecomapp.models import Category, Customer, Message, MessageHistory
 from django.contrib.auth import authenticate,login,logout
 from rest_framework.authtoken.models import Token
 from ecomapp.serializers import CategorySerializer, CustomerSerializer, LoginSerializer, OTPResetSerializer, OTPverifySerializer, PasswordSetSerializer, RegisterSerializer
@@ -185,6 +186,9 @@ from django.db.models import Q
 from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
 class UserRegisterView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'register.html'
@@ -216,7 +220,7 @@ class LoginTemView(View):
         else:
             return render(request, "login.html", context)
 
-
+@method_decorator(logout_after_10_minutes, name='dispatch')     
 @method_decorator(login_required, name='dispatch')     
 class HomeView(View):
 
@@ -229,12 +233,93 @@ def logout_view(request):
     logout(request)
     return redirect('/')
 
-
+@logout_after_10_minutes
 @login_required(login_url='/') 
 def chat_list(request):
     receiver_users = Customer.objects.exclude(email=request.user.email)  # Fetch receiver users
     context = {'receiver_users': receiver_users}
     return render(request, 'chat/chat_list.html', context)
+
+@login_required(login_url='/') 
+@require_GET
+def get_message_history(request):
+    sender_username = request.GET.get('sender')
+    receiver_username = request.GET.get('receiver')
+    print(request.GET.dict(),'---------------------HERE')
+
+    try:
+        sender = Customer.objects.get(email=sender_username)
+        receiver = Customer.objects.get(email=receiver_username)
+
+        message_history = MessageHistory.objects.filter(
+            Q(message__sender=sender, message__receiver=receiver) |
+            Q(message__sender=receiver, message__receiver=sender)
+        ).order_by('timestamp')  # Order the messages by timestamp, adjust as needed
+
+        history_data = []
+        for history_item in message_history:
+            history_data.append({
+                'sender_username': history_item.message.sender.email,
+                'receiver_email': history_item.message.receiver.email,
+                'message': history_item.content,
+                'created_by': history_item.created_by.email if history_item.created_by else None,
+            })
+
+    except Customer.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    except MessageHistory.DoesNotExist:
+        return JsonResponse({'error': 'Message history not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse(history_data, safe=False)
+
+
+# @require_GET
+# def get_message_history(request):
+#     sender_username = request.GET.get('sender')
+#     receiver_username = request.GET.get('receiver')
+
+#     try:
+#         sender = Customer.objects.get(email=sender_username)
+#         receiver = Customer.objects.get(email=receiver_username)
+
+#         message_history = MessageHistory.objects.filter(
+#             Q(message__sender=sender, message__receiver=receiver) |
+#             Q(message__sender=receiver, message__receiver=sender)
+#         ).order_by('timestamp')  # Order the messages by timestamp, adjust as needed
+
+#         history_data = []
+#         for history_item in message_history:
+#             sender_email = history_item.message.sender.email
+#             receiver_email = history_item.message.receiver.email
+
+#             if sender_email == sender_username:
+#                 sender_email = sender_username
+#                 receiver_email = receiver_username
+#             else:
+#                 sender_email = receiver_username
+#                 receiver_email = sender_username
+
+#             history_data.append({
+#                 'sender_username': sender_email,
+#                 'receiver_email': receiver_email,
+#                 'message': history_item.content,
+#                 'created_by': history_item.created_by.email if history_item.created_by else None,
+#             })
+
+#     except Customer.DoesNotExist:
+#         return JsonResponse({'error': 'User not found'}, status=404)
+#     except MessageHistory.DoesNotExist:
+#         return JsonResponse({'error': 'Message history not found'}, status=404)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+#     return JsonResponse(history_data, safe=False)
+
+
+
+
 
 
 

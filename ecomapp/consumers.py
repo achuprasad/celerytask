@@ -72,7 +72,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         # Leave the chat room
-        print('--LEAVING THE ROOM')
+        print('--LEAVING THE ROOM ')
         await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
     async def receive(self, text_data):
@@ -116,13 +116,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # Create a new message if it doesn't exist
             existing_message = Message.objects.create(sender=sender, receiver=receiver, content=message)
             
-        MessageHistory.objects.create(message=existing_message, content=message)
+        MessageHistory.objects.create(message=existing_message,created_by = sender ,content=message)
 
     
     async def chat_message(self, event):
     # Send the received message to the WebSocket
+        print('----event----',event)
         message = event['message']
-        print('---CHAT------messages--------',message)
+        
         sender_username = event['username']
         print('----------sender_username-----------',sender_username)
         receiver_username = event['receiver_username']  # Include receiver's username
@@ -133,5 +134,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message': message,
             'sender_username': sender_username,
             'receiver_username': receiver_username,
+            'created_by': sender_username
         }))
     

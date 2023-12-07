@@ -24,7 +24,9 @@ urlpatterns = [
 
     # path("chat", chat_views.chatPage, name="chat-page"),
     path('chat_list/', views.chat_list, name='chat_list'),
-    
+
+    #History messages
+    path('api/message-history/', views.get_message_history, name='message_history'),
 
 
    
