@@ -232,7 +232,6 @@ class HomeView(View):
 
 
 def logout_view(request):
-    # Customer.objects.get(id=request.user.id)
     logout(request)
     # print('request.user.is_authenticated:',request.user.is_authenticated)
     return redirect('/')
@@ -243,6 +242,27 @@ def chat_list(request):
     receiver_users = Customer.objects.exclude(email=request.user.email)  # Fetch receiver users
     context = {'receiver_users': receiver_users}
     return render(request, 'chat/chat_list.html', context)
+
+
+def save_fcm_token(request):
+    if request.method == 'POST':
+        
+        fcm_token = request.POST.get('fcm_token')
+        print('---fcm_token----:::----',fcm_token)
+
+        print('------here------',request.user)
+        try:
+            user = Customer.objects.get(id=request.user.id)
+            user.fcm_token = fcm_token
+            user.save()
+        except:
+            ...
+        
+        return JsonResponse({'message': 'FCM token saved successfully'})
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
 
 @login_required(login_url='/') 
 @require_GET
@@ -277,32 +297,6 @@ def get_message_history(request):
         return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse(history_data, safe=False)
-
-
-
-
-
-def save_fcm_token(request):
-    if request.method == 'POST':
-        
-        fcm_token = request.POST.get('fcm_token')
-        print('---fcm_token----:::----',fcm_token)
-
-        print('------here------',request.user)
-        try:
-            user = Customer.objects.get(id=request.user.id)
-            user.fcm_token = fcm_token
-            user.save()
-        except:
-            ...
-        
-        return JsonResponse({'message': 'FCM token saved successfully'})
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=400)
-
-
-
-
 
 
 
