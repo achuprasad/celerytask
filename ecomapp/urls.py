@@ -28,6 +28,13 @@ urlpatterns = [
     #History messages
     path('api/message-history/', views.get_message_history, name='message_history'),
 
+    #firebase integration
+    path('save_fcm_token/', views.save_fcm_token, name='save_fcm_token'),
+
+
+    path('firebase-messaging-sw.js',views.showFirebaseJS,name="show_firebase_js"),
+    path('send/' , views.send),
+
 
    
 ]

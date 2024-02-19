@@ -64,10 +64,16 @@
             font-size: 0.9em;
         }
     </style>
+     <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-app.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-analytics.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-messaging.js"></script>
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
+
 <body>
     <header>
         <h1>Welcome to the Chat App</h1>
+        <button> <a href="/logouttemp">LOGOUT</a></button>
         <!-- Add any header elements or navigation links here -->
     </header>
 
@@ -88,6 +94,90 @@
         </section>
     </main>
 
-   
+        <script>
+    $(document).ready(function() {
+
+            var firebaseConfig = {
+                apiKey: "AIzaSyBgnd6Y8jYStTkltENO2uzNgO1EOZW30X8",
+                authDomain: "chat-d6eb2.firebaseapp.com",
+                databaseURL: "https://chat-d6eb2-default-rtdb.firebaseio.com",
+                projectId: "chat-d6eb2",
+                storageBucket: "chat-d6eb2.appspot.com",
+                messagingSenderId: "119893492348",
+                appId: "1:119893492348:web:9c850df4dee73f27f6fff9",
+                measurementId: "G-3FESXB4DBN"
+            };
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            firebase.analytics();
+        
+            const messaging = firebase.messaging();
+            console.log(messaging.getToken())
+            messaging.getToken({ vapidKey: 'BK3Q4ZdEKTgW3ifVufVCGvnh-22E2JAnYw3L6Uqsonv9EvKg8p7RA6zYUwIIooKNiUX6DxgRcS8P33jp-3Ev2X4' }).then((currentToken) => {
+            if (currentToken) {
+            
+            console.log('current TOKEN',currentToken)
+            } else {
+            console.log('No registration token available. Request permission to generate one.');
+        
+            }
+            }).catch((err) => {
+                console.log('An error occurred while retrieving token. ', err);
+            });
+        
+            messaging.requestPermission().then(function () {
+            console.log("Notification permission granted.");
+            return messaging.getToken()
+            }).then(function (token) {
+            // Send FCM token to the server
+            sendTokenToServer(token);
+            console.log('----here-token- coming-',token)
+            }).catch(function (err) {
+                console.log("Unable to get permission to notify.", err);
+            });
+        
+                messaging.onMessage((payload) => {
+                console.log('Message received. ', payload);
+            
+            });
+
+
+
+
+        
+            function sendTokenToServer(token) {
+            console.log('----response');    
+            const csrfToken = getCookie('csrftoken');
+            const requestBody = `fcm_token=${token}`;
+            
+            $.ajax({
+                url: '/save_fcm_token/',
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken 
+                },
+                data: requestBody,
+                success: function(data) {
+                    console.log('FCM token sent to server:', data);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error sending FCM token to server:', error);
+                }
+            });
+        }
+                
+
+
+
+
+        // Function to get the CSRF token from the cookie
+        function getCookie(name) {
+            const cookieValue = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return cookieValue ? cookieValue.pop() : '';
+        }
+
+
+    });
+        </script>
 </body>
 </html>

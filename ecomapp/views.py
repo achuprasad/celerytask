@@ -17,7 +17,9 @@ from rest_framework.authentication import TokenAuthentication
 import pyotp
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
-
+import requests
+import json
+from django.http import JsonResponse
 from ecomapp.tasks import delete_all_secret_keys
 # Create your views here.
 
@@ -25,7 +27,6 @@ from ecomapp.tasks import delete_all_secret_keys
 class RegisterView(APIView):
 
     def post(self, request):
-        print(request.data,'......data')
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -226,11 +227,14 @@ class HomeView(View):
 
     def get(self, request):
         context = {}
+        # print('request---data----',request.META)
         return render(request, "home.html", context)
 
 
 def logout_view(request):
+    # Customer.objects.get(id=request.user.id)
     logout(request)
+    # print('request.user.is_authenticated:',request.user.is_authenticated)
     return redirect('/')
 
 @logout_after_10_minutes
@@ -273,6 +277,133 @@ def get_message_history(request):
         return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse(history_data, safe=False)
+
+
+
+
+
+def save_fcm_token(request):
+    if request.method == 'POST':
+        
+        fcm_token = request.POST.get('fcm_token')
+        print('---fcm_token----:::----',fcm_token)
+
+        print('------here------',request.user)
+        try:
+            user = Customer.objects.get(id=request.user.id)
+            user.fcm_token = fcm_token
+            user.save()
+        except:
+            ...
+        
+        return JsonResponse({'message': 'FCM token saved successfully'})
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#no needed
+
+def send_notification(registration_ids , message_title , message_desc):
+    fcm_api = "BK3Q4ZdEKTgW3ifVufVCGvnh-22E2JAnYw3L6Uqsonv9EvKg8p7RA6zYUwIIooKNiUX6DxgRcS8P33jp-3Ev2X4"
+    url = "https://fcm.googleapis.com/fcm/send"
+    
+    headers = {
+    "Content-Type":"application/json",
+    "Authorization": 'key='+fcm_api}
+
+    payload = {
+        "registration_ids" :registration_ids,
+        "priority" : "high",
+        "notification" : {
+            "body" : message_desc,
+            "title" : message_title,
+            "image" : "https://i.ytimg.com/vi/m5WUPHRgdOA/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLDwz-yjKEdwxvKjwMANGk5BedCOXQ",
+            "icon": "https://yt3.ggpht.com/ytc/AKedOLSMvoy4DeAVkMSAuiuaBdIGKC7a5Ib75bKzKO3jHg=s900-c-k-c0x00ffffff-no-rj",
+            
+        }
+    }
+
+    result = requests.post(url,  data=json.dumps(payload), headers=headers )
+    print(result.json())
+
+
+
+def send(request):
+    resgistration  = [
+    ]
+    send_notification(resgistration , 'Code Keen added a new video' , 'Code Keen new video alert')
+    return HttpResponse("sent")
+
+
+def showFirebaseJS(request):
+    data='importScripts("https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js");' \
+         'importScripts("https://www.gstatic.com/firebasejs/8.2.0/firebase-messaging.js"); ' \
+         'var firebaseConfig = {' \
+         '        apiKey: "AIzaSyBgnd6Y8jYStTkltENO2uzNgO1EOZW30X8",' \
+         '        authDomain: "chat-d6eb2.firebaseapp.com",' \
+         '        databaseURL: "https://chat-d6eb2-default-rtdb.firebaseio.com",' \
+         '        projectId: "chat-d6eb2",' \
+         '        storageBucket: "chat-d6eb2.appspot.com",' \
+         '        messagingSenderId: "119893492348",' \
+         '        appId: "1:119893492348:web:9c850df4dee73f27f6fff9",' \
+         '        measurementId: "G-3FESXB4DBN"' \
+         ' };' \
+         'firebase.initializeApp(firebaseConfig);' \
+         'const messaging=firebase.messaging();' \
+         'messaging.setBackgroundMessageHandler(function (payload) {' \
+         '    console.log(payload);' \
+         '    const notification=JSON.parse(payload);' \
+         '    const notificationOption={' \
+         '        body:notification.body,' \
+         '        icon:notification.icon' \
+         '    };' \
+         '    return self.registration.showNotification(payload.notification.title,notificationOption);' \
+         '});'
+
+    return HttpResponse(data,content_type="text/javascript")
 
 
 # @require_GET

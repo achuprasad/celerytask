@@ -136,6 +136,40 @@ USE_I18N = True
 USE_TZ = True
 
 
+
+# settings.py
+
+import os
+from pathlib import Path
+import firebase_admin
+from firebase_admin import credentials
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Path to the JSON file containing Firebase service account credentials
+FIREBASE_ADMIN_SDK_FILE = os.path.join(BASE_DIR, 'ecomproject', 'firebase', 'firebase-admin-sdk.json')
+
+print('---FIREBASE_ADMIN_SDK_FILE------',FIREBASE_ADMIN_SDK_FILE)
+
+# Initialize Firebase using the credentials from the JSON file
+cred = credentials.Certificate(FIREBASE_ADMIN_SDK_FILE)
+
+print('----cred-----------',cred)
+
+firebase_admin.initialize_app(cred)
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 

@@ -41,6 +41,7 @@ class Customer(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
     phone = models.CharField(max_length=250,blank=True,null=True)
     secret_key = models.CharField(max_length=16, blank=True, null=True)
+    fcm_token = models.CharField(max_length=16, blank=True, null=True)
     created_at = models.DateTimeField(_('created_date'), auto_now_add=True, editable=False, blank=True, null=True) 
 
     USERNAME_FIELD = "email"

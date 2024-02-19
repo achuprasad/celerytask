@@ -49,6 +49,13 @@ import json
 from .models import Customer, Message, MessageHistory
 import hashlib
 
+import firebase_admin
+from firebase_admin import messaging
+
+
+
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.sender_username = self.scope['url_route']['kwargs']['sender_username']
@@ -99,6 +106,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
         
+        await self.send_push_notification_to_receiver(message, self.receiver_username)
 
     def save_message_to_database(self, sender_username, receiver_username, message):
         from django.db.models import Q  # Update the import statement
@@ -136,4 +144,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'receiver_username': receiver_username,
             'created_by': sender_username
         }))
+    
+
+
+    
+    async def send_push_notification_to_receiver(self, message, receiver_username):
+        try:
+            receiver = await sync_to_async(Customer.objects.get)(email=receiver_username)  
+            receiver_fcm_token = receiver.fcm_token
+            
+            notification = messaging.Notification(
+                title='New Message',
+                body=message
+            )
+
+            push_message = messaging.Message(
+                notification=notification,
+                token=receiver_fcm_token
+            )
+
+            response = messaging.send(push_message)
+            print('Successfully sent message:', response)
+        except firebase_admin._messaging_utils.UnregisteredError:
+            print('Error: The FCM token is no longer valid. Remove it from the database or handle it accordingly.')
+
+    
+    
     
