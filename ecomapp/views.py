@@ -232,7 +232,9 @@ class HomeView(View):
 
 
 def logout_view(request):
-    # Customer.objects.get(id=request.user.id)
+    user = Customer.objects.get(id=request.user.id)
+    user.fcm_token = None
+    user.save()
     logout(request)
     # print('request.user.is_authenticated:',request.user.is_authenticated)
     return redirect('/')
