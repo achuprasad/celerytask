@@ -260,7 +260,8 @@
                 };
 
                 chatSockets[receiverUsername].onclose = function (e) {
-                    console.log("The connection was closed unexpectedly!");
+                    console.log("The connection was closed unexpectedly!"); 
+                    closeChat(receiverUsername);
                 };
 
                 chatSockets[receiverUsername].onerror = function (error) {

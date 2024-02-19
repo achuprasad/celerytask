@@ -59,10 +59,9 @@ from firebase_admin import messaging
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.sender_username = self.scope['url_route']['kwargs']['sender_username']
-        print('self.sender_username-------',self.sender_username)
+        
         self.receiver_username = self.scope['url_route']['kwargs']['receiver_username']
-        print('self.receiver_username--------',self.receiver_username)
-
+        
          # Create a unique room name based on sender and receiver usernames
         # hashed_group_name = hashlib.sha256(f"{self.sender_username}_{self.receiver_username}".encode()).hexdigest()[:50]  # Example hash length limit
         hashed_group_name = hashlib.sha256(f"{min(self.sender_username, self.receiver_username)}_{max(self.sender_username, self.receiver_username)}".encode()).hexdigest()[:50]
@@ -84,13 +83,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        print('text_data_json--------',text_data_json)
+        
         message = text_data_json['message']
-        print('message-------####----',message)
+        
         sender_username = text_data_json['username']
-        print('sender_username----####----',sender_username)
+        
         receiver_username = self.receiver_username
-        print('receiver_username-----####----',receiver_username)
+        
 
         # Save message to the database asynchronously using sync_to_async
         await sync_to_async(self.save_message_to_database)(sender_username, receiver_username, message)
@@ -133,9 +132,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = event['message']
         
         sender_username = event['username']
-        print('----------sender_username-----------',sender_username)
         receiver_username = event['receiver_username']  # Include receiver's username
-        print('----------receiver_username-----------',receiver_username)
 
         # Send the complete data with sender and receiver info to the WebSocket
         await self.send(text_data=json.dumps({
@@ -152,21 +149,52 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             receiver = await sync_to_async(Customer.objects.get)(email=receiver_username)  
             receiver_fcm_token = receiver.fcm_token
-            
-            notification = messaging.Notification(
-                title='New Message',
-                body=message
-            )
 
-            push_message = messaging.Message(
-                notification=notification,
-                token=receiver_fcm_token
-            )
+            if receiver_fcm_token:
+                notification = messaging.Notification(
+                    title=f"Message from {receiver_username}",
+                    body=message
+                )
 
-            response = messaging.send(push_message)
-            print('Successfully sent message:', response)
+                push_message = messaging.Message(
+                    notification=notification,
+                    token=receiver_fcm_token
+                )
+
+                response = messaging.send(push_message)
+                print('Successfully sent message:', response)
+            else:
+                print('Error: FCM token is not available for receiver', receiver_username)
         except firebase_admin._messaging_utils.UnregisteredError:
             print('Error: The FCM token is no longer valid. Remove it from the database or handle it accordingly.')
+        except Customer.DoesNotExist:
+            print('Error: Customer with email', receiver_username, 'does not exist or is not registered.')
+
+
+
+
+
+    # async def send_push_notification_to_receiver(self, message, receiver_username):
+        #     try:
+        #         receiver = await sync_to_async(Customer.objects.get)(email=receiver_username)  
+        #         print('iiiiiii---receiver',receiver)
+        #         receiver_fcm_token = receiver.fcm_token
+        #         print('iiiiiii---receiver_fcm_token',receiver_fcm_token)
+
+        #         notification = messaging.Notification(
+        #             title=f"message from {receiver_username}",
+        #             body=message
+        #         )
+
+        #         push_message = messaging.Message(
+        #             notification=notification,
+        #             token=receiver_fcm_token
+        #         )
+
+        #         response = messaging.send(push_message)
+        #         print('Successfully sent message:', response)
+        #     except firebase_admin._messaging_utils.UnregisteredError:
+        #         print('Error: The FCM token is no longer valid. Remove it from the database or handle it accordingly.')
 
     
     
