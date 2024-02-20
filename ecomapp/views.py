@@ -239,7 +239,7 @@ def logout_view(request):
 @logout_after_10_minutes
 @login_required(login_url='/') 
 def chat_list(request):
-    receiver_users = Customer.objects.exclude(email=request.user.email)  # Fetch receiver users
+    receiver_users = Customer.objects.exclude(is_superuser=True).exclude(id=request.user.id)
     context = {'receiver_users': receiver_users}
     return render(request, 'chat/chat_list.html', context)
 
