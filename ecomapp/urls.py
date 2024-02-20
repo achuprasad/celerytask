@@ -32,8 +32,8 @@ urlpatterns = [
     path('save_fcm_token/', views.save_fcm_token, name='save_fcm_token'),
 
 
-    path('firebase-messaging-sw.js',views.showFirebaseJS,name="show_firebase_js"),
-    path('send/' , views.send),
+    # path('firebase-messaging-sw.js',views.showFirebaseJS,name="show_firebase_js"),
+    # path('send/' , views.send),
 
 
    

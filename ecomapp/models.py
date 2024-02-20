@@ -43,6 +43,7 @@ class Customer(AbstractUser):
     secret_key = models.CharField(max_length=16, blank=True, null=True)
     fcm_token = models.CharField(max_length=16, blank=True, null=True)
     created_at = models.DateTimeField(_('created_date'), auto_now_add=True, editable=False, blank=True, null=True) 
+    # notification_count = models.IntegerField(default=0)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
