@@ -105,7 +105,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
         
-        await self.send_push_notification_to_receiver(message, self.receiver_username)
+        await self.send_push_notification_to_receiver(message, self.receiver_username,self.sender_username)
 
     def save_message_to_database(self, sender_username, receiver_username, message):
         from django.db.models import Q  # Update the import statement
@@ -145,26 +145,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     
-    async def send_push_notification_to_receiver(self, message, receiver_username):
+    async def send_push_notification_to_receiver(self, message, receiver_username,sender):
         try:
-            receiver = await sync_to_async(Customer.objects.get)(email=receiver_username)  
-            receiver_fcm_token = receiver.fcm_token
+            receiver = await sync_to_async(Customer.objects.get)(email=receiver_username)
+            if receiver:  
+                receiver_fcm_token = receiver.fcm_token
 
-            if receiver_fcm_token:
-                notification = messaging.Notification(
-                    title=f"Message from {receiver_username}",
-                    body=message
-                )
+                if receiver_fcm_token:
+                    notification = messaging.Notification(
+                        title=f"Message from {sender}",
+                        body=message
+                    )
 
-                push_message = messaging.Message(
-                    notification=notification,
-                    token=receiver_fcm_token
-                )
+                    push_message = messaging.Message(
+                        notification=notification,
+                        token=receiver_fcm_token
+                    )
 
-                response = messaging.send(push_message)
-                print('Successfully sent message:', response)
+                    response = messaging.send(push_message)
+                    print('Successfully sent message:', response)
+                else:
+                    print('Error: FCM token is not available for receiver', receiver_username)
             else:
-                print('Error: FCM token is not available for receiver', receiver_username)
+                 print('Error: receiver is not available for this', receiver_username)
         except firebase_admin._messaging_utils.UnregisteredError:
             print('Error: The FCM token is no longer valid. Remove it from the database or handle it accordingly.')
         except Customer.DoesNotExist:

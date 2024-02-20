@@ -122,15 +122,6 @@
                     {% endfor %}
                 </ul>
             </div>
-            <!---notification -->
-                <!-- New section for notifications -->
-                <div class="col-md-4">
-                    <h1>Notifications</h1>
-                    <ul class="list-group" id="notification-list">
-                        <!-- Notifications will be dynamically added here -->
-                    </ul>
-                </div>
-            <!--notification  end-->
             
         </div>
     </div>
@@ -205,6 +196,10 @@
 
                             messageContainer.appendChild(messageElement);
                         });
+                        
+                        // Scroll to the bottom of the message container
+                        messageContainer.scrollTop = messageContainer.scrollHeight;
+        
                     } else {
                         console.error(`Message container not found for ${receiverUsername}`);
                     }
@@ -1177,6 +1172,51 @@
                 document.querySelector("#id_message_send_input").value = "";
             };
         }
+
+ // scroll functionality
+        function smoothScrollToBottom(element) {
+            // Duration of the scroll animation in milliseconds
+            const duration = 500;
+
+            // Starting position of the scroll
+            const start = element.scrollTop;
+
+            // Distance to scroll
+            const distance = element.scrollHeight - start;
+
+            // Start time
+            let startTime = null;
+
+            // Animation function
+            function animation(currentTime) {
+                if (startTime === null) {
+                    startTime = currentTime;
+                }
+
+                const elapsedTime = currentTime - startTime;
+                const scrollAmount = Math.easeInOutQuad(elapsedTime, start, distance, duration);
+                element.scrollTop = scrollAmount;
+
+                if (elapsedTime < duration) {
+                    requestAnimationFrame(animation);
+                }
+            }
+
+            // Easing function
+            Math.easeInOutQuad = function (t, b, c, d) {
+                t /= d / 2;
+                if (t < 1) return c / 2 * t * t + b;
+                t--;
+                return -c / 2 * (t * (t - 2) - 1) + b;
+            };
+
+            // Start the animation
+            requestAnimationFrame(animation);
+        }
+        // scroll functionality --- end
+
+
+
     </script>
 </body>
 </html> -->
